@@ -1,0 +1,11 @@
+@extends('layouts.cliente')
+@section('titulo',$negocio->nombre.' — Delivery Patacamaya')
+@section('contenido-cliente')
+<a class="btn btn-link px-0 mb-2" href="{{ route('cliente.buscar') }}"><i class="bi bi-arrow-left"></i> Volver a negocios</a>
+<header class="card soft-card p-3 p-md-4 mb-4"><div class="d-flex justify-content-between gap-3"><div><p class="text-secondary mb-1">{{ $negocio->categoria->nombre }}</p><h1 class="h2">{{ $negocio->nombre }}</h1></div><span class="badge align-self-start {{ $negocio->estaAbierto()?'text-bg-success':'text-bg-secondary' }}">{{ $negocio->estaAbierto()?'Abierto':'Cerrado' }}</span></div><p>{{ $negocio->descripcion }}</p><div class="small"><i class="bi bi-telephone"></i> {{ $negocio->telefono }} @if($negocio->direccion_referencia)<span class="ms-3"><i class="bi bi-geo-alt"></i> {{ $negocio->direccion_referencia }}</span>@endif</div></header>
+<details class="card soft-card p-3 mb-4"><summary class="fw-semibold">Ver horarios</summary><div class="mt-3">@forelse($negocio->horarios as $h)<div class="d-flex justify-content-between py-1 border-bottom"><span class="text-capitalize">{{ $h->dia_semana }}</span><span>{{ $h->cerrado ? 'Cerrado' : substr($h->hora_apertura,0,5).' – '.substr($h->hora_cierre,0,5) }}</span></div>@empty<p class="text-secondary mb-0">Horarios no registrados.</p>@endforelse</div></details>
+<form class="card soft-card p-3 mb-4" method="GET"><div class="row g-2"><div class="col-8"><input class="form-control" name="producto" value="{{ $filtros['producto']??'' }}" placeholder="Buscar productos..."></div><div class="col-4 d-grid"><button class="btn btn-primary">Buscar</button></div></div></form><h2 class="h3 mb-3">Catálogo</h2>
+@if($categoriasProducto->isEmpty() && $productosSinCategoria->isEmpty())<div class="empty-state">Este negocio todavía no tiene productos disponibles en su catálogo.</div>@endif
+@foreach($categoriasProducto as $categoria)<section class="mb-4"><h3 class="h5 text-uppercase">{{ $categoria->nombre }}</h3><div class="row g-3">@foreach($categoria->productos as $producto)@include('cliente._producto')@endforeach</div></section>@endforeach
+@if($productosSinCategoria->isNotEmpty())<section><h3 class="h5 text-uppercase">Otros</h3><div class="row g-3">@foreach($productosSinCategoria as $producto)@include('cliente._producto')@endforeach</div></section>@endif
+@endsection

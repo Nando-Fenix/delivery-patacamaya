@@ -1,0 +1,3 @@
+@extends('layouts.cliente')
+@section('titulo','Mis pedidos — Delivery Patacamaya')
+@section('contenido-cliente')<h1 class="h2">Mis pedidos</h1><div class="d-grid gap-3">@forelse($pedidos as $pedido)<a class="card soft-card p-3 text-decoration-none text-dark" href="{{ route('cliente.pedidos.show',$pedido) }}"><div class="d-flex justify-content-between"><strong>Pedido #{{ $pedido->id }}</strong><x-estado-pedido :estado="$pedido->estado"/></div><div>{{ $pedido->negocio->nombre }}</div><small class="text-secondary">{{ $pedido->fecha_pedido->format('d/m/Y H:i') }} · Bs {{ number_format((float)$pedido->total,2,',','.') }}</small></a>@empty<div class="empty-state">Todavía no realizaste pedidos.</div>@endforelse</div>{{ $pedidos->links() }}@endsection

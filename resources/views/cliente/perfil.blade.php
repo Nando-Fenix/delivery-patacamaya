@@ -1,0 +1,3 @@
+@extends('layouts.cliente')
+@section('titulo','Perfil — Delivery Patacamaya')
+@section('contenido-cliente')<div class="card soft-card p-4"><h1 class="h3">Mi perfil</h1><p><strong>{{ auth()->user()->nombres }} {{ auth()->user()->apellidos }}</strong></p><a class="btn btn-primary mb-3" href="{{ route('cliente.direcciones.index') }}">Mis direcciones</a><form method="POST" action="{{ route('logout') }}">@csrf<button class="btn btn-outline-danger">Cerrar sesión</button></form></div>@endsection

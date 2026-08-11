@@ -1,0 +1,3 @@
+@php($valor = $estado instanceof \App\Enums\EstadoPedido ? $estado : \App\Enums\EstadoPedido::from($estado))
+@php($clase = match($valor) { \App\Enums\EstadoPedido::Pendiente => 'warning', \App\Enums\EstadoPedido::Aceptado, \App\Enums\EstadoPedido::EnPreparacion => 'primary', \App\Enums\EstadoPedido::Listo, \App\Enums\EstadoPedido::Entregado => 'success', \App\Enums\EstadoPedido::Rechazado, \App\Enums\EstadoPedido::Cancelado => 'danger', default => 'secondary' })
+<span class="badge text-bg-{{ $clase }}"><i class="bi bi-circle-fill me-1 small"></i>{{ $valor->etiqueta() }}</span>
