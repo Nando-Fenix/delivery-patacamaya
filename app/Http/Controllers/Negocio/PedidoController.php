@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Negocio;
 
 use App\Enums\EstadoPedido;
+use App\Events\EstadoPedidoActualizado;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Negocio\CambiarEstadoPedidoRequest;
 use App\Models\Negocio;
@@ -33,7 +34,8 @@ class PedidoController extends Controller
         $nuevo = EstadoPedido::from($r->validated('estado'));
         abort_unless(in_array($nuevo, $pedido->estado->siguientesNegocio(), true), 422);
         $pedido->update(['estado' => $nuevo, 'motivo_rechazo' => $nuevo === EstadoPedido::Rechazado ? $r->validated('motivo_rechazo') : null]);
+        EstadoPedidoActualizado::dispatch($pedido);
 
-        return back()->with('estado','Estado del pedido actualizado.');
+        return back()->with('estado', 'Estado del pedido actualizado.');
     }
 }

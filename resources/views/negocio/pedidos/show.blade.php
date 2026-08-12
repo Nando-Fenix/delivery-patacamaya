@@ -9,7 +9,7 @@
         <h1 class="h2 mb-1">Pedido #{{ $pedido->id }}</h1>
         <p class="text-secondary mb-0">{{ $pedido->fecha_pedido->format('d/m/Y H:i') }}</p>
     </div>
-    <x-estado-pedido :estado="$pedido->estado"/>
+    <span id="pedido-estado-detalle"><x-estado-pedido :estado="$pedido->estado"/></span>
 </header>
 
 <div class="row g-3">
@@ -99,3 +99,34 @@
     </form>
 @endif
 @endsection
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (!window.Echo) {
+        return;
+    }
+
+    const negocioId = {{ $negocio->id }};
+    const pedidoId = {{ $pedido->id }};
+
+    window.Echo.private('negocio.' + negocioId)
+        .listen('.pedido.estado-actualizado', (pedido) => {
+            if (Number(pedido.negocio_id) !== negocioId || Number(pedido.id) !== pedidoId) {
+                return;
+            }
+
+            const estado = document.querySelector('#pedido-estado-detalle .badge');
+            if (estado) {
+                estado.className = pedido.estado === 'cancelado'
+                    ? 'badge text-bg-danger'
+                    : 'badge text-bg-secondary';
+                estado.textContent = pedido.estado_etiqueta;
+            }
+
+            if (pedido.estado === 'cancelado') {
+                document.getElementById('pedido-acciones')?.remove();
+            }
+        });
+});
+</script>
+@endpush

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Cliente;
 
 use App\Enums\EstadoPedido;
+use App\Events\EstadoPedidoActualizado;
 use App\Http\Controllers\Controller;
 use App\Models\Pedido;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +32,7 @@ class PedidoController extends Controller
         abort_unless($pedido->usuario_id === $r->user()->id, 403);
         abort_unless($pedido->estado === EstadoPedido::Pendiente, 422);
         $pedido->update(['estado' => EstadoPedido::Cancelado]);
+        EstadoPedidoActualizado::dispatch($pedido);
 
         return back()->with('estado', 'Pedido cancelado.');
     }

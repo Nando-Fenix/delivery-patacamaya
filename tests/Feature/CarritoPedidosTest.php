@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Enums\EstadoPedido;
+use App\Events\EstadoPedidoActualizado;
+use App\Events\PedidoCreado;
 use App\Models\CategoriaNegocio;
 use App\Models\DireccionUsuario;
 use App\Models\Negocio;
@@ -14,6 +16,7 @@ use App\Models\Zona;
 use Carbon\Carbon;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class CarritoPedidosTest extends TestCase
@@ -120,6 +123,19 @@ class CarritoPedidosTest extends TestCase
         $this->assertSame('Puerta azul', $pedido->fresh()->direccion_referencia);
     }
 
+    public function test_checkout_despacha_pedido_creado_con_el_pedido_confirmado(): void
+    {
+        Event::fake([PedidoCreado::class]);
+
+        $pedido = $this->crearPedido();
+
+        Event::assertDispatched(
+            PedidoCreado::class,
+            fn (PedidoCreado $evento) => $evento->pedido->is($pedido)
+                && $evento->pedido->negocio_id === $this->negocio->id,
+        );
+    }
+
     public function test_negocio_cerrado_impide_pedido(): void
     {
         $this->negocio->horarios()->update(['cerrado' => true]);
@@ -138,6 +154,64 @@ class CarritoPedidosTest extends TestCase
         $this->patch(route('cliente.pedidos.cancelar', $pedido))->assertUnprocessable();
     }
 
+    public function test_detalle_cliente_contiene_hooks_para_actualizacion_en_tiempo_real(): void
+    {
+        $pedido = $this->crearPedido();
+
+        $this->actingAs($this->cliente)
+            ->get(route('cliente.pedidos.show', $pedido))
+            ->assertOk()
+            ->assertSee('id="pedido-estado-detalle"', false)
+            ->assertSee('id="pedido-motivo-rechazo"', false)
+            ->assertSee('id="pedido-cancelar"', false)
+            ->assertSee("private('cliente.' + usuarioId)", false)
+            ->assertSee("listen('.pedido.estado-actualizado'", false);
+    }
+
+    public function test_cancelar_pendiente_despacha_estado_actualizado(): void
+    {
+        $pedido = $this->crearPedido();
+        Event::fake([EstadoPedidoActualizado::class]);
+
+        $this->actingAs($this->cliente)
+            ->patch(route('cliente.pedidos.cancelar', $pedido))
+            ->assertRedirect();
+
+        $this->assertSame(EstadoPedido::Cancelado, $pedido->fresh()->estado);
+        Event::assertDispatched(
+            EstadoPedidoActualizado::class,
+            fn (EstadoPedidoActualizado $evento) => $evento->pedido->is($pedido)
+                && $evento->pedido->estado === EstadoPedido::Cancelado,
+        );
+    }
+
+    public function test_cliente_ajeno_no_cancela_ni_despacha_evento(): void
+    {
+        $pedido = $this->crearPedido();
+        Event::fake([EstadoPedidoActualizado::class]);
+
+        $this->actingAs($this->otroUsuarioCliente())
+            ->patch(route('cliente.pedidos.cancelar', $pedido))
+            ->assertForbidden();
+
+        $this->assertSame(EstadoPedido::Pendiente, $pedido->fresh()->estado);
+        Event::assertNotDispatched(EstadoPedidoActualizado::class);
+    }
+
+    public function test_pedido_no_pendiente_no_se_cancela_ni_despacha_evento(): void
+    {
+        $pedido = $this->crearPedido();
+        $pedido->update(['estado' => EstadoPedido::Aceptado]);
+        Event::fake([EstadoPedidoActualizado::class]);
+
+        $this->actingAs($this->cliente)
+            ->patch(route('cliente.pedidos.cancelar', $pedido))
+            ->assertUnprocessable();
+
+        $this->assertSame(EstadoPedido::Aceptado, $pedido->fresh()->estado);
+        Event::assertNotDispatched(EstadoPedidoActualizado::class);
+    }
+
     public function test_negocio_solo_ve_propios_y_respeta_transiciones(): void
     {
         $pedido = $this->crearPedido();
@@ -153,15 +227,51 @@ class CarritoPedidosTest extends TestCase
         $this->assertSame(EstadoPedido::Listo, $pedido->fresh()->estado);
     }
 
+    public function test_cambio_valido_del_negocio_despacha_estado_actualizado(): void
+    {
+        $pedido = $this->crearPedido();
+        Event::fake([EstadoPedidoActualizado::class]);
+
+        $this->actingAs($this->propietario)
+            ->patch(route('negocio.pedidos.estado', [$this->negocio, $pedido]), ['estado' => 'aceptado'])
+            ->assertRedirect();
+
+        Event::assertDispatched(
+            EstadoPedidoActualizado::class,
+            fn (EstadoPedidoActualizado $evento) => $evento->pedido->is($pedido)
+                && $evento->pedido->estado === EstadoPedido::Aceptado,
+        );
+    }
+
+    public function test_transicion_invalida_del_negocio_no_despacha_estado_actualizado(): void
+    {
+        $pedido = $this->crearPedido();
+        Event::fake([EstadoPedidoActualizado::class]);
+
+        $this->actingAs($this->propietario)
+            ->patch(route('negocio.pedidos.estado', [$this->negocio, $pedido]), ['estado' => 'listo'])
+            ->assertUnprocessable();
+
+        Event::assertNotDispatched(EstadoPedidoActualizado::class);
+    }
+
     public function test_negocio_puede_rechazar_pendiente_con_motivo(): void
     {
         $pedido = $this->crearPedido();
+        Event::fake([EstadoPedidoActualizado::class]);
         $this->actingAs($this->propietario)->patch(route('negocio.pedidos.estado', [$this->negocio, $pedido]), [
             'estado' => 'rechazado',
             'motivo_rechazo' => 'Producto agotado',
         ])->assertRedirect();
         $this->assertSame(EstadoPedido::Rechazado, $pedido->fresh()->estado);
         $this->assertSame('Producto agotado', $pedido->fresh()->motivo_rechazo);
+        Event::assertDispatched(EstadoPedidoActualizado::class, function (EstadoPedidoActualizado $evento) use ($pedido) {
+            $payload = $evento->broadcastWith();
+
+            return $evento->pedido->is($pedido)
+                && $payload['estado'] === 'rechazado'
+                && $payload['motivo_rechazo'] === 'Producto agotado';
+        });
     }
 
     private function crearPedido(): Pedido

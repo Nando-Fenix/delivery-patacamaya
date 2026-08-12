@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Cliente;
 
 use App\Enums\EstadoPedido;
+use App\Events\PedidoCreado;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cliente\ConfirmarPedidoRequest;
 use App\Models\Carrito;
@@ -74,6 +75,8 @@ class CheckoutController extends Controller
 
             return $pedido;
         });
+
+        PedidoCreado::dispatch($pedido);
 
         return redirect()->route('cliente.pedidos.show', $pedido)->with('estado', 'Pedido confirmado.');
     }
