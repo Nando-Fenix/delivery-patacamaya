@@ -1,21 +1,39 @@
-Write-Host "Iniciando Delivery Patacamaya..." -ForegroundColor Cyan
+$proyecto = "C:\laragon\www\delivery-patacamaya"
+$php = "C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe"
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "php artisan serve"
-Start-Sleep -Seconds 1
+Write-Host "=========================================" -ForegroundColor Cyan
+Write-Host " DELIVERY PATACAMAYA" -ForegroundColor Cyan
+Write-Host "=========================================" -ForegroundColor Cyan
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "php artisan reverb:start --host=127.0.0.1 --port=8080 --debug"
-Start-Sleep -Seconds 1
-
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "php artisan queue:work --verbose"
-Start-Sleep -Seconds 1
-
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "npm run dev"
+$version = & $php -r "echo PHP_VERSION;"
 
 Write-Host ""
-Write-Host "Procesos iniciados:" -ForegroundColor Green
-Write-Host "- Laravel"
-Write-Host "- Reverb"
-Write-Host "- Queue Worker"
-Write-Host "- Vite"
+Write-Host "PHP utilizado: $version" -ForegroundColor Green
 Write-Host ""
-Write-Host "Abre: http://127.0.0.1:8000"
+
+Start-Process powershell `
+    -WorkingDirectory $proyecto `
+    -ArgumentList "-NoExit", "-Command", "& '$php' artisan serve"
+
+Start-Sleep -Seconds 1
+
+Start-Process powershell `
+    -WorkingDirectory $proyecto `
+    -ArgumentList "-NoExit", "-Command", "& '$php' artisan reverb:start --host=127.0.0.1 --port=8080 --debug"
+
+Start-Sleep -Seconds 1
+
+Start-Process powershell `
+    -WorkingDirectory $proyecto `
+    -ArgumentList "-NoExit", "-Command", "& '$php' artisan queue:work --verbose"
+
+Start-Sleep -Seconds 1
+
+Start-Process powershell `
+    -WorkingDirectory $proyecto `
+    -ArgumentList "-NoExit", "-Command", "npm.cmd run dev"
+
+Write-Host ""
+Write-Host "Entorno iniciado correctamente." -ForegroundColor Green
+Write-Host "Laravel: http://127.0.0.1:8000"
+Write-Host "Reverb: 127.0.0.1:8080"
