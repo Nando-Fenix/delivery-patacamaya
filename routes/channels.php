@@ -17,3 +17,11 @@ Broadcast::channel('negocio.{negocioId}', function ($user, int $negocioId) {
 Broadcast::channel('cliente.{usuarioId}', function ($user, int $usuarioId) {
     return (int) $user->id === $usuarioId && $user->rol->nombre === 'cliente';
 });
+
+Broadcast::channel('repartidores.disponibles', function ($user) {
+    return $user->activo && $user->rol->nombre === 'repartidor';
+});
+
+Broadcast::channel('repartidor.{usuarioId}', function ($user, int $usuarioId) {
+    return (int) $user->id === $usuarioId && $user->rol->nombre === 'repartidor';
+});

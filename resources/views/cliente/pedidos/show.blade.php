@@ -8,6 +8,8 @@
     <h1 class="h2">Pedido #{{ $pedido->id }}</h1>
     <span id="pedido-estado-detalle"><x-estado-pedido :estado="$pedido->estado"/></span>
 </div>
+<div id="pedido-repartidor" class="alert alert-success {{ $pedido->repartidor ? '' : 'd-none' }}"><strong>Repartidor asignado</strong><div id="pedido-repartidor-nombre">{{ $pedido->repartidor ? trim($pedido->repartidor->nombres.' '.$pedido->repartidor->apellidos) : '' }}</div></div>
+<x-seguimiento-repartidor :pedido="$pedido" canal="cliente" :actor-id="auth()->id()"/>
 <p>{{ $pedido->negocio->nombre }} · {{ $pedido->fecha_pedido->format('d/m/Y H:i') }}</p>
 <div class="alert alert-danger {{ $pedido->motivo_rechazo ? '' : 'd-none' }}" id="pedido-motivo-rechazo">
     <strong>Motivo del rechazo:</strong> <span>{{ $pedido->motivo_rechazo }}</span>
@@ -36,9 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const usuarioId = {{ auth()->id() }};
     const pedidoId = {{ $pedido->id }};
-    const clases = { pendiente: 'warning', aceptado: 'primary', en_preparacion: 'primary', listo: 'success', entregado: 'success', rechazado: 'danger', cancelado: 'danger' };
+    const clases = { pendiente: 'warning', aceptado: 'primary', en_preparacion: 'primary', en_camino: 'primary', listo: 'success', entregado: 'success', rechazado: 'danger', cancelado: 'danger' };
 
     window.Echo.private('cliente.' + usuarioId)
+        .listen('.entrega.asignada', (entrega) => {
+            if (Number(entrega.usuario_id) === usuarioId && Number(entrega.pedido_id) === pedidoId) {
+                document.getElementById('pedido-repartidor-nombre').textContent = entrega.repartidor.nombre;
+                document.getElementById('pedido-repartidor').classList.remove('d-none');
+            }
+        })
         .listen('.pedido.estado-actualizado', (pedido) => {
             if (Number(pedido.usuario_id) !== usuarioId || Number(pedido.id) !== pedidoId) return;
 

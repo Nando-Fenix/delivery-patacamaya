@@ -4,6 +4,7 @@ import * as bootstrap from 'bootstrap';
 import './echo';
 
 window.bootstrap = bootstrap;
+window.L = L;
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

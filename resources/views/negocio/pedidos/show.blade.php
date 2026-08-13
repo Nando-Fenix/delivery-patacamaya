@@ -12,6 +12,9 @@
     <span id="pedido-estado-detalle"><x-estado-pedido :estado="$pedido->estado"/></span>
 </header>
 
+<div id="pedido-repartidor" class="alert alert-success {{ $pedido->repartidor ? '' : 'd-none' }}"><strong>Repartidor asignado:</strong> <span>{{ $pedido->repartidor ? trim($pedido->repartidor->nombres.' '.$pedido->repartidor->apellidos) : '' }}</span></div>
+<x-seguimiento-repartidor :pedido="$pedido" canal="negocio" :actor-id="$negocio->id"/>
+
 <div class="row g-3">
     <div class="col-lg-7">
         <section class="card soft-card p-3 mb-3">
@@ -110,6 +113,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const pedidoId = {{ $pedido->id }};
 
     window.Echo.private('negocio.' + negocioId)
+        .listen('.entrega.asignada', (entrega) => {
+            if (Number(entrega.negocio_id) === negocioId && Number(entrega.pedido_id) === pedidoId) {
+                document.querySelector('#pedido-repartidor span').textContent = entrega.repartidor.nombre;
+                document.getElementById('pedido-repartidor').classList.remove('d-none');
+            }
+        })
         .listen('.pedido.estado-actualizado', (pedido) => {
             if (Number(pedido.negocio_id) !== negocioId || Number(pedido.id) !== pedidoId) {
                 return;

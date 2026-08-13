@@ -23,7 +23,7 @@
                         <td>{{ $pedido->usuario->nombres }} {{ $pedido->usuario->apellidos }}</td>
                         <td>{{ $pedido->fecha_pedido->format('d/m/Y H:i') }}</td>
                         <td>Bs {{ number_format((float) $pedido->total, 2, ',', '.') }}</td>
-                        <td id="pedido-estado-{{ $pedido->id }}"><x-estado-pedido :estado="$pedido->estado"/></td>
+                        <td id="pedido-estado-{{ $pedido->id }}"><x-estado-pedido :estado="$pedido->estado"/><small class="d-block text-success {{ $pedido->repartidor ? '' : 'd-none' }}" id="pedido-repartidor-{{ $pedido->id }}">{{ $pedido->repartidor ? trim($pedido->repartidor->nombres.' '.$pedido->repartidor->apellidos) : '' }}</small></td>
                     </tr>
                 @empty
                     <tr id="pedidos-vacio"><td colspan="5"><div class="empty-state">Aún no hay pedidos para este negocio.</div></td></tr>
@@ -93,6 +93,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             contador.textContent = String(Number(contador.textContent) + 1);
             aviso.classList.remove('d-none');
+        })
+        .listen('.entrega.asignada', (entrega) => {
+            if (Number(entrega.negocio_id) === negocioId && document.getElementById('pedido-' + entrega.pedido_id)) {
+                let repartidor = document.getElementById('pedido-repartidor-' + entrega.pedido_id);
+                if (!repartidor) {
+                    repartidor = document.createElement('small');
+                    repartidor.id = 'pedido-repartidor-' + entrega.pedido_id;
+                    repartidor.className = 'd-block text-success';
+                    document.getElementById('pedido-estado-' + entrega.pedido_id)?.appendChild(repartidor);
+                }
+                repartidor.textContent = entrega.repartidor.nombre;
+                repartidor.classList.remove('d-none');
+                aviso.textContent = entrega.repartidor.nombre + ' aceptó una entrega.';
+                aviso.classList.remove('d-none');
+            }
         })
         .listen('.pedido.estado-actualizado', (pedido) => {
             if (Number(pedido.negocio_id) !== negocioId) {

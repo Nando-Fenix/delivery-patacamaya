@@ -48,4 +48,9 @@ class Usuario extends Authenticatable
     {
         return $this->hasMany(Pedido::class);
     }
+
+    public function entregas(): HasMany
+    {
+        return $this->hasMany(Pedido::class, 'repartidor_id');
+    }
 }

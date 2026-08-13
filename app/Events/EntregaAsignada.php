@@ -9,7 +9,7 @@ use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class EstadoPedidoActualizado implements ShouldBroadcast, ShouldDispatchAfterCommit
+class EntregaAsignada implements ShouldBroadcast, ShouldDispatchAfterCommit
 {
     use Dispatchable, SerializesModels;
 
@@ -17,33 +17,33 @@ class EstadoPedidoActualizado implements ShouldBroadcast, ShouldDispatchAfterCom
 
     public function broadcastOn(): array
     {
-        $canales = [
-            new PrivateChannel('negocio.'.$this->pedido->negocio_id),
+        return [
+            new PrivateChannel('repartidores.disponibles'),
+            new PrivateChannel('repartidor.'.$this->pedido->repartidor_id),
             new PrivateChannel('cliente.'.$this->pedido->usuario_id),
+            new PrivateChannel('negocio.'.$this->pedido->negocio_id),
         ];
-
-        if ($this->pedido->repartidor_id !== null) {
-            $canales[] = new PrivateChannel('repartidor.'.$this->pedido->repartidor_id);
-        }
-
-        return $canales;
     }
 
     public function broadcastAs(): string
     {
-        return 'pedido.estado-actualizado';
+        return 'entrega.asignada';
     }
 
     public function broadcastWith(): array
     {
+        $this->pedido->loadMissing('repartidor');
+
         return [
-            'id' => $this->pedido->id,
+            'pedido_id' => $this->pedido->id,
             'negocio_id' => $this->pedido->negocio_id,
             'usuario_id' => $this->pedido->usuario_id,
             'repartidor_id' => $this->pedido->repartidor_id,
-            'estado' => $this->pedido->estado->value,
-            'estado_etiqueta' => $this->pedido->estado->etiqueta(),
-            'motivo_rechazo' => $this->pedido->motivo_rechazo,
+            'asignado' => true,
+            'repartidor' => [
+                'id' => $this->pedido->repartidor->id,
+                'nombre' => trim($this->pedido->repartidor->nombres.' '.$this->pedido->repartidor->apellidos),
+            ],
         ];
     }
 }

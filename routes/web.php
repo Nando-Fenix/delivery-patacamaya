@@ -18,6 +18,7 @@ use App\Http\Controllers\Negocio\MiNegocioController;
 use App\Http\Controllers\Negocio\PedidoController as NegocioPedidoController;
 use App\Http\Controllers\Negocio\ProductoController as NegocioProductoController;
 use App\Http\Controllers\Negocio\UbicacionController;
+use App\Http\Controllers\Repartidor\EntregaController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
@@ -100,5 +101,12 @@ Route::middleware(['auth', 'rol:cliente'])->prefix('cliente')->name('cliente.')-
     Route::patch('/direcciones/{direccion}/predeterminada', [DireccionController::class, 'predeterminada'])->name('direcciones.predeterminada');
 });
 Route::middleware(['auth', 'rol:repartidor'])->prefix('repartidor')->name('repartidor.')->group(function () {
-    Route::view('/inicio', 'inicio', ['rol' => 'repartidor'])->name('inicio');
+    Route::redirect('/inicio', '/repartidor/entregas/disponibles')->name('inicio');
+    Route::get('/entregas/disponibles', [EntregaController::class, 'disponibles'])->name('entregas.disponibles');
+    Route::get('/entregas', [EntregaController::class, 'propias'])->name('entregas.propias');
+    Route::post('/entregas/{pedido}/aceptar', [EntregaController::class, 'aceptar'])->name('entregas.aceptar');
+    Route::get('/entregas/{pedido}', [EntregaController::class, 'show'])->name('entregas.show');
+    Route::patch('/entregas/{pedido}/iniciar', [EntregaController::class, 'iniciar'])->name('entregas.iniciar');
+    Route::patch('/entregas/{pedido}/entregar', [EntregaController::class, 'entregar'])->name('entregas.entregar');
+    Route::post('/entregas/{pedido}/ubicacion', [EntregaController::class, 'ubicacion'])->name('entregas.ubicacion');
 });

@@ -14,7 +14,7 @@ class PedidoController extends Controller
 {
     public function index(Request $r): View
     {
-        $pedidos = $r->user()->pedidos()->with('negocio')->latest('fecha_pedido')->paginate(12);
+        $pedidos = $r->user()->pedidos()->with(['negocio', 'repartidor'])->latest('fecha_pedido')->paginate(12);
 
         return view('cliente.pedidos.index', compact('pedidos'));
     }
@@ -22,7 +22,7 @@ class PedidoController extends Controller
     public function show(Request $r, Pedido $pedido): View
     {
         abort_unless($pedido->usuario_id === $r->user()->id, 403);
-        $pedido->load(['negocio', 'detalles']);
+        $pedido->load(['negocio', 'detalles', 'repartidor']);
 
         return view('cliente.pedidos.show', compact('pedido'));
     }

@@ -1,0 +1,8 @@
+@extends('layouts.app')
+@section('contenido')
+<div class="admin-layout">
+    <aside class="admin-sidebar card soft-card d-none d-lg-block"><div class="card-body p-3"><div class="small text-uppercase fw-bold text-secondary mb-2">Repartidor</div><nav class="nav nav-pills flex-column gap-1"><a class="nav-link {{ request()->routeIs('repartidor.entregas.disponibles') ? 'active' : '' }}" href="{{ route('repartidor.entregas.disponibles') }}"><i class="bi bi-box-seam me-2"></i>Disponibles</a><a class="nav-link {{ request()->routeIs('repartidor.entregas.propias', 'repartidor.entregas.show') ? 'active' : '' }}" href="{{ route('repartidor.entregas.propias') }}"><i class="bi bi-bicycle me-2"></i>Mis entregas</a></nav><hr><form method="POST" action="{{ route('logout') }}">@csrf<button class="btn btn-sm btn-outline-danger w-100">Cerrar sesión</button></form></div></aside>
+    <div class="admin-content">@yield('contenido-repartidor')</div>
+</div>
+<nav class="mobile-bottom-nav d-lg-none"><a class="mobile-nav-item {{ request()->routeIs('repartidor.entregas.disponibles') ? 'active' : '' }}" href="{{ route('repartidor.entregas.disponibles') }}"><i class="bi bi-box-seam"></i><span>Disponibles</span></a><a class="mobile-nav-item {{ request()->routeIs('repartidor.entregas.propias', 'repartidor.entregas.show') ? 'active' : '' }}" href="{{ route('repartidor.entregas.propias') }}"><i class="bi bi-bicycle"></i><span>Mis entregas</span></a></nav>
+@endsection
